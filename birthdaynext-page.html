@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>birthday-nextpage.html</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #333;
+      text-align: center;
+      background: radial-gradient(circle, #ffdde1, #ee9ca7);
+      overflow: hidden;
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      animation: fadeIn 2s ease-out;
+    }
+    p {
+      font-size: 1.2rem;
+      color: #666;
+      margin-bottom: 30px;
+      animation: fadeIn 2s ease-out;
+    }
+    .container {
+      display: flex;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+    .box {
+      width: 300px;
+      height: 200px;
+      background: linear-gradient(135deg, #ff69b4, #ff1493);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 26px;
+      cursor: pointer;
+      transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+      box-shadow: 0 12px 25px rgba(255, 20, 147, 0.6);
+      color: white;
+      font-weight: bold;
+      position: relative;
+      animation: bounce 2s ease infinite;
+    }
+    .box:hover {
+      transform: scale(1.15) rotate(3deg);
+      box-shadow: 0 15px 30px rgba(255, 20, 147, 0.8);
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .recording-overlay {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-weight: bold;
+      font-size: 20px;
+      border-radius: 10px;
+    }
+    #continue-btn {
+      display: none;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #ff1493;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    #continue-btn:hover {
+      background-color: #ff69b4;
+    }
+    #media-display {
+      display: flex;
+      gap: 30px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #media-display img, #media-display video {
+      width: 320px;
+      height: 240px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to the Memory Maker</h1>
+  <hr>
+
+  <div class="container">
+    <div class="box" onclick="triggerFileInput('photo')">📷 Upload Photos</div>
+    <div class="box" onclick="triggerFileInput('video')">📹 Upload Videos</div>
+    <div class="box" onclick="startRecording()">📝 Ask Questions</div>
+  </div>
+
+  <input type="file" id="photo-upload" style="display: none;" accept="image/*">
+  <input type="file" id="video-upload" style="display: none;" accept="video/*">
+
+  <div id="video-container" style="display: none;">
+    <video id="video-preview" width="320" height="240" controls></video>
+    <div class="recording-overlay" id="recording-overlay">Recording...</div>
+    <button onclick="stopRecording()">Stop Recording</button>
+  </div>
+
+  <button id="continue-btn" onclick="continueAction()">Continue</button>
+
+  <div id="media-display"></div>
+
+  <script>
+    let actionSelected = false;
+
+    function triggerFileInput(type) {
+      actionSelected = true;
+      showContinueButton();
+
+      const inputId = type === 'photo' ? 'photo-upload' : 'video-upload';
+      const input = document.getElementById(inputId);
+      input.click();
+      input.onchange = handleFileUpload;
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      const mediaDisplay = document.getElementById('media-display');
+      const mediaElement = document.createElement(file.type.startsWith('image') ? 'img' : 'video');
+
+      mediaElement.src = URL.createObjectURL(file);
+      if (file.type.startsWith('video')) mediaElement.controls = true;
+      mediaDisplay.appendChild(mediaElement);
+
+      const storedPaths = JSON.parse(localStorage.getItem('file_paths') || '[]');
+      storedPaths.push(mediaElement.src);
+      localStorage.setItem('file_paths', JSON.stringify(storedPaths));
+    }
+
+    function showContinueButton() {
+      if (!actionSelected) return;
+      document.getElementById('continue-btn').style.display = 'block';
+    }
+
+    function continueAction() {
+      if (actionSelected) {
+        window.location.href = 'merge-theme-music.html';
+      }
+    }
+
+    function startRecording() {
+      window.location.href = 'askquestions.html';
+    }
+  </script>
+</body>
+</html>

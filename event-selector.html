@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Selector</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .event-card {
+            transition: all 0.3s;
+        }
+        .event-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 p-6">
+    <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">Choose Your Special Moment</h1>
+
+    <!-- Events Grid -->
+    <div id="events" class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"></div>
+
+    <!-- Create Button -->
+    <div id="create-button-container" class="text-center mt-8 hidden">
+        <button id="create-button" class="bg-pink-300 text-white text-2xl font-bold py-4 px-8 rounded-full transform hover:scale-110 transition-all duration-300 shadow-2xl">
+            Generate Link
+        </button>
+    </div>
+
+    <!-- Link Section -->
+    <div id="link-container" class="hidden mt-8 text-center">
+        <h2 class="text-2xl font-bold mb-4">Share this link:</h2>
+        <input type="text" id="generated-link" class="border rounded p-2 w-1/2" readonly />
+        <button id="copy-button" class="bg-blue-500 text-white py-2 px-4 rounded ml-2">Copy Link</button>
+    </div>
+
+    <script>
+        // Event data with icons and colors
+        const EVENTS = [
+            { id: 'birthday', name: 'Birthday', emoji: '🎂', color: 'bg-pink-100' },
+            { id: 'anniversary', name: 'Anniversary', emoji: '💑', color: 'bg-red-100' },
+            { id: 'wedding', name: 'Wedding', emoji: '💍', color: 'bg-yellow-100' },
+            { id: 'graduation', name: 'Graduation', emoji: '🎓', color: 'bg-green-100' },
+            
+        ];
+    
+        let selectedEvent = null;
+    
+        // Function to render events
+        const renderEvents = () => {
+            const eventsContainer = document.getElementById('events');
+            eventsContainer.innerHTML = '';
+    
+            EVENTS.forEach(event => {
+                const eventCard = document.createElement('div');
+                eventCard.className = `event-card ${event.color} rounded-2xl shadow-lg p-6 text-center cursor-pointer`;
+                eventCard.innerHTML = `
+                    <div class="text-6xl mb-4">${event.emoji}</div>
+                    <h2 class="text-xl font-semibold">${event.name}</h2>
+                `;
+                eventCard.onclick = () => handleEventSelect(event);
+                eventsContainer.appendChild(eventCard);
+            });
+        };
+    
+        // Function to handle event selection
+        const handleEventSelect = (event) => {
+            selectedEvent = event;
+            document.getElementById('create-button-container').classList.remove('hidden');
+            document.getElementById('link-container').classList.add('hidden');
+        };
+    
+        // Function to generate a link using switch case
+        const generateLink = () => {
+            if (!selectedEvent) return;
+    
+            let link = '';
+    
+            // Switch case to generate a different link based on selected event
+            switch (selectedEvent.id) {
+                case 'birthday':
+                    link = `${window.location.origin}/public/birthday.html`;
+                    break;
+                case 'anniversary':
+                    link = `${window.location.origin}/public/anniversary.html`;
+                    break;
+                case 'wedding':
+                    link = `${window.location.origin}/public/wedding.html`;
+                    break;
+                case 'graduation':
+                    link = `${window.location.origin}/public/graduation.html`;
+                    break;
+                case 'babyShower':
+                    link = `${window.location.origin}/public/baby-shower.html`;
+                    break;
+                case 'retirement':
+                    link = `${window.location.origin}/public/retirement.html`;
+                    break;
+                case 'houseWarming':
+                    link = `${window.location.origin}/public/house-warming.html`;
+                    break;
+                case 'religiousCelebration':
+                    link = `${window.location.origin}/public/religious-celebration.html`;
+                    break;
+                default:
+                    link = `${window.location.origin}/public/default-event.html`;
+                    break;
+            }
+    
+            document.getElementById('generated-link').value = link;
+            document.getElementById('link-container').classList.remove('hidden');
+    
+            // Scroll to show the link section
+            document.getElementById('link-container').scrollIntoView({ behavior: 'smooth' });
+        };
+    
+        // Initialize the app
+        renderEvents();
+    
+        // Add event listener to the create button
+        document.getElementById('create-button').onclick = generateLink;
+    
+        // Copy link to clipboard
+        document.getElementById('copy-button').onclick = () => {
+            const linkInput = document.getElementById('generated-link');
+            linkInput.select();
+            document.execCommand('copy');
+    
+            // Show success message
+            const copySuccess = document.createElement('div');
+            copySuccess.innerText = 'Link copied to clipboard!';
+            copySuccess.className = 'text-green-500 mt-2';
+            document.getElementById('link-container').appendChild(copySuccess);
+            setTimeout(() => copySuccess.remove(), 2000);
+        };
+    </script>
+    
+</body>
+</html>
