@@ -1,0 +1,158 @@
+import os
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+from flask_uploads import UploadSet, configure_uploads, IMAGES, VIDEOS
+from moviepy.editor import VideoFileClip, concatenate_videoclips, AudioFileClip, ImageClip
+from twilio.rest import Client
+
+# Initialize Flask app
+app = Flask(__name__)
+CORS(app)  # Allow cross-origin requests
+
+# Configure Twilio credentials from environment variables
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
+
+# Initialize Twilio client
+client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+# File upload configuration
+app.config['UPLOADED_PHOTOS_DEST'] = 'uploads/photos'
+app.config['UPLOADED_VIDEOS_DEST'] = 'uploads/videos'
+photos = UploadSet('photos', IMAGES)
+videos = UploadSet('videos', VIDEOS)
+configure_uploads(app, (photos, videos))
+
+# Set max upload size (16 MB)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+# Ensure directories exist
+os.makedirs(app.config['UPLOADED_PHOTOS_DEST'], exist_ok=True)
+os.makedirs(app.config['UPLOADED_VIDEOS_DEST'], exist_ok=True)
+os.makedirs('uploads', exist_ok=True)
+os.makedirs('songs', exist_ok=True)
+
+# Serve HTML files
+@app.route('/')
+def index():
+    return send_from_directory('.', 'birthday-next.html')
+
+@app.route('/merge-theme-music.html')
+def merge_page():
+    return send_from_directory('.', 'merge-theme-music.html')
+
+# Serve static song files
+@app.route('/songs/<filename>')
+def serve_song(filename):
+    return send_from_directory('songs', filename)
+
+# Upload media route
+@app.route('/upload_media', methods=['POST'])
+def upload_media():
+    if 'photo' not in request.files and 'video' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    files = request.files.getlist('photo') + request.files.getlist('video')
+    file_paths = []
+
+    for file in files:
+        if file and allowed_file(file.filename):
+            if not allowed_size(file):
+                return jsonify({'error': 'File size exceeds limit'}), 400
+            dest = app.config['UPLOADED_PHOTOS_DEST'] if file.content_type.startswith('image') else app.config['UPLOADED_VIDEOS_DEST']
+            filename = os.path.join(dest, file.filename)
+            file.save(filename)
+            file_paths.append(filename)
+        else:
+            return jsonify({'error': 'Invalid file type or size'}), 400
+
+    return jsonify({'file_paths': file_paths})
+
+# Upload selected song to uploads/ for use with moviepy
+@app.route('/select_song', methods=['POST'])
+def select_song():
+    song_file = request.files.get('song')
+    if song_file and allowed_file(song_file.filename):
+        song_path = os.path.join('uploads', song_file.filename)
+        song_file.save(song_path)
+        return jsonify({'song_path': f"/{song_path}"})  # Important: Return as URL path
+    else:
+        return jsonify({'error': 'Invalid song file'}), 400
+
+# Merge media and audio into one video
+@app.route('/merge_media', methods=['POST'])
+def merge_media():
+    data = request.get_json()
+    file_paths = data.get('file_paths')
+    song_path = data.get('song_path').lstrip('/')  # Remove leading slash for local access
+
+    if not file_paths or not song_path:
+        return jsonify({'error': 'Missing file paths or song path'}), 400
+
+    clips = []
+    for path in file_paths:
+        if path.endswith('.mp4'):
+            clips.append(VideoFileClip(path))
+        elif path.endswith(('.jpg', '.jpeg', '.png')):
+            img_clip = ImageClip(path).set_duration(2)
+            clips.append(img_clip)
+
+    if not clips:
+        return jsonify({'error': 'No valid media files to process'}), 400
+
+    final_clip = concatenate_videoclips(clips, method="compose")
+
+    # Add background music
+    audio = AudioFileClip(song_path).subclip(0, final_clip.duration)
+    final_clip = final_clip.set_audio(audio)
+
+    # Write the final video
+    output_path = 'uploads/final_output.mp4'
+    final_clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
+
+    # Clean up
+    for file_path in file_paths:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    if os.path.exists(song_path):
+        os.remove(song_path)
+
+    return jsonify({'output_path': f"/{output_path}"})
+
+# Send SMS
+@app.route('/send-sms', methods=['POST'])
+def send_sms():
+    try:
+        data = request.get_json()
+        to_number = data.get('to')
+        from_number = data.get('from', TWILIO_PHONE_NUMBER)
+        message_body = data.get('body')
+
+        if not to_number or not message_body:
+            return jsonify({'error': 'Missing phone number or message'}), 400
+
+        message = client.messages.create(
+            body=message_body,
+            from_=from_number,
+            to=to_number
+        )
+
+        return jsonify({'status': 'success', 'sid': message.sid}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Allowed file types and size validation
+def allowed_file(filename):
+    allowed_extensions = {'jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'mp3'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+def allowed_size(file):
+    file.seek(0, os.SEEK_END)  # Move to end to check file size
+    size = file.tell()  # Get file size
+    file.seek(0)  # Reset pointer to start of file
+    return size <= app.config['MAX_CONTENT_LENGTH']
+
+if __name__ == '__main__':
+    app.run(debug=True)

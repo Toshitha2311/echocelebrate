@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Memory Maker</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5e6ea, #fff0f5);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .title {
+            font-size: 3rem;
+            color: #d765a5;
+            margin: 10px 0;
+            font-family: 'Pacifico', cursive;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            color: #7d5a7d;
+            margin-bottom: 20px;
+        }
+        
+        .card-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .card {
+            background-color: #fd79a8;
+            border-radius: 15px;
+            padding: 40px 20px;
+            width: 28%;
+            min-width: 250px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card:before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: linear-gradient(45deg, #ffeef5, #ffcce0, #ffeef5);
+            z-index: -1;
+            filter: blur(20px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .card:hover:before {
+            opacity: 1;
+        }
+        
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: white;
+        }
+        
+        .card-title {
+            color: white;
+            font-size: 1.7rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #d765a5;
+        }
+        
+        .modal-title {
+            text-align: center;
+            color: #d765a5;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .upload-area {
+            border: 3px dashed #ddd;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            background-color: #fafafa;
+            transition: background-color 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .upload-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background-color: #d765a5;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 15px;
+        }
+        
+        .upload-btn:hover {
+            background-color: #c45491;
+        }
+        
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fef5f9;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .question.active {
+            display: block;
+        }
+        
+        .question-text {
+            font-size: 1.2rem;
+            color: #7d5a7d;
+            margin-bottom: 10px;
+        }
+        
+        .answer-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #f0c4d9;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        
+        .floating-stickers {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.7;
+            animation: float 15s linear infinite;
+            z-index: -1;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-100px) rotate(180deg); }
+            100% { transform: translateY(0) rotate(360deg); }
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f0c4d9;
+            opacity: 0;
+            z-index: -1;
+        }
+        
+        .btn {
+            background-color: #d765a5;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin: 10px;
+            box-shadow: 0 4px 10px rgba(215, 101, 165, 0.3);
+        }
+        
+        .btn:hover {
+            background-color: #c45491;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(215, 101, 165, 0.4);
+        }
+        
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .preview-container {
+            margin-top: 20px;
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .preview-item {
+            position: relative;
+            margin: 5px;
+        }
+        
+        .preview-image, .preview-video {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            object-fit: cover;
+        }
+        
+        .remove-item {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #ff5252;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 14px;
+            line-height: 25px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .progress-indicator {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #7d5a7d;
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                width: 80%;
+            }
+            
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">💍 Wedding Memory Maker 💐</h1>
+            <p class="subtitle">Capture, create, and cherish your special wedding moments forever!</p>
+        </div>
+        
+        <div class="card-container">
+            <div class="card" id="photos-card">
+                <div class="card-icon">📸</div>
+                <h2 class="card-title">Upload Photos</h2>
+            </div>
+            
+            <div class="card" id="videos-card">
+                <div class="card-icon">🎥</div>
+                <h2 class="card-title">Upload Videos</h2>
+            </div>
+            
+            <div class="card" id="questions-card">
+                <div class="card-icon">✨</div>
+                <h2 class="card-title">Share Memories</h2>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Photo Upload Modal -->
+    <div class="modal" id="photo-modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-photo-modal">&times;</span>
+            <h2 class="modal-title">📸 Upload Wedding Photos 💑</h2>
+            <div class="upload-area" id="photo-upload-area">
+                <p>Drag & drop your wedding photos here or</p>
+                <input type="file" id="photo-upload" class="upload-input" accept="image/*" multiple>
+                <button class="upload-btn" id="photo-upload-btn">Select Photos</button>
+            </div>
+            <div class="preview-container" id="photo-preview"></div>
+            <div class="btn-container">
+                <button class="btn" id="add-more-photos">Add More Photos</button>
+                <button class="btn" id="save-photos">Save Photos</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Video Upload Modal -->
+    <div class="modal" id="video-modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-video-modal">&times;</span>
+            <h2 class="modal-title">🎥 Upload Wedding Videos 💞</h2>
+            <div class="upload-area" id="video-upload-area">
+                <p>Drag & drop your wedding videos here or</p>
+                <input type="file" id="video-upload" class="upload-input" accept="video/*" multiple>
+                <button class="upload-btn" id="video-upload-btn">Select Videos</button>
+            </div>
+            <div class="preview-container" id="video-preview"></div>
+            <div class="btn-container">
+                <button class="btn" id="add-more-videos">Add More Videos</button>
+                <button class="btn" id="save-videos">Save Videos</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Questions Modal -->
+    <div class="modal" id="questions-modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-questions-modal">&times;</span>
+            <h2 class="modal-title">✨ Share Your Wedding Memories 💖</h2>
+            
+            <div class="progress-indicator">Question <span id="current-question">1</span> of <span id="total-questions">6</span></div>
+            
+            <div class="question active" data-question="1">
+                <p class="question-text">💫 How did you meet your partner?</p>
+                <textarea class="answer-input" rows="3" placeholder="Share your beautiful story..."></textarea>
+            </div>
+            
+            <div class="question" data-question="2">
+                <p class="question-text">💍 Describe your proposal moment:</p>
+                <textarea class="answer-input" rows="3" placeholder="Tell us how it happened..."></textarea>
+            </div>
+            
+            <div class="question" data-question="3">
+                <p class="question-text">👰 What was your favorite moment during the ceremony?</p>
+                <textarea class="answer-input" rows="3" placeholder="Share that special moment..."></textarea>
+            </div>
+            
+            <div class="question" data-question="4">
+                <p class="question-text">🎵 What was your first dance song?</p>
+                <textarea class="answer-input" rows="3" placeholder="The song that means so much to you both..."></textarea>
+            </div>
+            
+            <div class="question" data-question="5">
+                <p class="question-text">🍰 Any funny or unexpected moments during the wedding?</p>
+                <textarea class="answer-input" rows="3" placeholder="Those moments that made everyone laugh..."></textarea>
+            </div>
+            
+            <div class="question" data-question="6">
+                <p class="question-text">✈️ Where did you go for your honeymoon?</p>
+                <textarea class="answer-input" rows="3" placeholder="Share your honeymoon destination..."></textarea>
+            </div>
+            
+            <div class="btn-container">
+                <button class="btn" id="prev-question" disabled>Previous</button>
+                <button class="btn" id="next-question">Next</button>
+                <button class="btn" id="save-questions" style="display: none;">Save Memories</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Decorative Elements -->
+    <div class="floating-stickers" style="top: 15%; left: 5%;">💍</div>
+    <div class="floating-stickers" style="top: 25%; right: 8%;">💐</div>
+    <div class="floating-stickers" style="top: 55%; left: 10%;">🕊️</div>
+    <div class="floating-stickers" style="top: 70%; right: 15%;">🎀</div>
+    <div class="floating-stickers" style="top: 85%; left: 20%;">🥂</div>
+    <div class="floating-stickers" style="top: 40%; right: 25%;">💝</div>
+    
+    <script>
+        // Store uploaded files
+        const uploadedPhotos = [];
+        const uploadedVideos = [];
+        let currentQuestion = 1;
+        const totalQuestions = document.querySelectorAll('.question').length;
+        
+        // Update total questions display
+        document.getElementById('total-questions').textContent = totalQuestions;
+        
+        // Card click event listeners
+        document.getElementById('photos-card').addEventListener('click', function() {
+            document.getElementById('photo-modal').style.display = 'flex';
+            createConfetti();
+        });
+        
+        document.getElementById('videos-card').addEventListener('click', function() {
+            document.getElementById('video-modal').style.display = 'flex';
+            createConfetti();
+        });
+        
+        document.getElementById('questions-card').addEventListener('click', function() {
+            document.getElementById('questions-modal').style.display = 'flex';
+            createConfetti();
+        });
+        
+        // Close modal buttons
+        document.getElementById('close-photo-modal').addEventListener('click', function() {
+            document.getElementById('photo-modal').style.display = 'none';
+        });
+        
+        document.getElementById('close-video-modal').addEventListener('click', function() {
+            document.getElementById('video-modal').style.display = 'none';
+        });
+        
+        document.getElementById('close-questions-modal').addEventListener('click', function() {
+            document.getElementById('questions-modal').style.display = 'none';
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        });
+        
+        // Photo upload functionality
+        document.getElementById('photo-upload-btn').addEventListener('click', function() {
+            document.getElementById('photo-upload').click();
+        });
+        
+        document.getElementById('photo-upload').addEventListener('change', function(e) {
+            handleFileUpload(e, 'photo-preview', 'image');
+        });
+        
+        // Video upload functionality
+        document.getElementById('video-upload-btn').addEventListener('click', function() {
+            document.getElementById('video-upload').click();
+        });
+        
+        document.getElementById('video-upload').addEventListener('change', function(e) {
+            handleFileUpload(e, 'video-preview', 'video');
+        });
+        
+        // Add more photos button
+        document.getElementById('add-more-photos').addEventListener('click', function() {
+            document.getElementById('photo-upload').click();
+        });
+        
+        // Add more videos button
+        document.getElementById('add-more-videos').addEventListener('click', function() {
+            document.getElementById('video-upload').click();
+        });
+        
+        // Save photos button
+        document.getElementById('save-photos').addEventListener('click', function() {
+            if (uploadedPhotos.length > 0) {
+                alert(`${uploadedPhotos.length} wedding photos have been saved! ✨💍`);
+                document.getElementById('photo-modal').style.display = 'none';
+                createConfetti();
+            } else {
+                alert('Please upload at least one photo before saving.');
+            }
+        });
+        
+        // Save videos button
+        document.getElementById('save-videos').addEventListener('click', function() {
+            if (uploadedVideos.length > 0) {
+                alert(`${uploadedVideos.length} wedding videos have been saved! ✨💍`);
+                document.getElementById('video-modal').style.display = 'none';
+                createConfetti();
+            } else {
+                alert('Please upload at least one video before saving.');
+            }
+        });
+        
+        // Next question button
+        document.getElementById('next-question').addEventListener('click', function() {
+            if (currentQuestion < totalQuestions) {
+                // Hide current question
+                document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.remove('active');
+                
+                // Show next question
+                currentQuestion++;
+                document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.add('active');
+                
+                // Update progress indicator
+                document.getElementById('current-question').textContent = currentQuestion;
+                
+                // Enable previous button
+                document.getElementById('prev-question').disabled = false;
+                
+                // Show save button if this is the last question
+                if (currentQuestion === totalQuestions) {
+                    document.getElementById('next-question').style.display = 'none';
+                    document.getElementById('save-questions').style.display = 'inline-block';
+                }
+            }
+        });
+        
+        // Previous question button
+        document.getElementById('prev-question').addEventListener('click', function() {
+            if (currentQuestion > 1) {
+                // Hide current question
+                document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.remove('active');
+                
+                // Show previous question
+                currentQuestion--;
+                document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.add('active');
+                
+                // Update progress indicator
+                document.getElementById('current-question').textContent = currentQuestion;
+                
+                // Disable previous button if at first question
+                if (currentQuestion === 1) {
+                    document.getElementById('prev-question').disabled = true;
+                }
+                
+                // Hide save button and show next button if not on last question
+                if (currentQuestion < totalQuestions) {
+                    document.getElementById('next-question').style.display = 'inline-block';
+                    document.getElementById('save-questions').style.display = 'none';
+                }
+            }
+        });
+        
+        // Save questions button
+        document.getElementById('save-questions').addEventListener('click', function() {
+            alert('Your wedding memories have been saved! ✨💍');
+            document.getElementById('questions-modal').style.display = 'none';
+            createConfetti();
+        });
+        
+        // Drag and drop functionality for photos
+        const photoUploadArea = document.getElementById('photo-upload-area');
+        
+        photoUploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            photoUploadArea.style.backgroundColor = '#f0e0e9';
+        });
+        
+        photoUploadArea.addEventListener('dragleave', function() {
+            photoUploadArea.style.backgroundColor = '#fafafa';
+        });
+        
+        photoUploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            photoUploadArea.style.backgroundColor = '#fafafa';
+            const files = e.dataTransfer.files;
+            handleFileDrop(files, 'photo-preview', 'image');
+        });
+        
+        // Drag and drop functionality for videos
+        const videoUploadArea = document.getElementById('video-upload-area');
+        
+        videoUploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            videoUploadArea.style.backgroundColor = '#f0e0e9';
+        });
+        
+        videoUploadArea.addEventListener('dragleave', function() {
+            videoUploadArea.style.backgroundColor = '#fafafa';
+        });
+        
+        videoUploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            videoUploadArea.style.backgroundColor = '#fafafa';
+            const files = e.dataTransfer.files;
+            handleFileDrop(files, 'video-preview', 'video');
+        });
+        
+        // Handle file drop
+        function handleFileDrop(files, previewId, type) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                if ((type === 'image' && file.type.startsWith('image/')) || 
+                    (type === 'video' && file.type.startsWith('video/'))) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        if (type === 'image') {
+                            uploadedPhotos.push({
+                                file: file,
+                                dataURL: e.target.result
+                            });
+                            updatePreview('photo-preview', uploadedPhotos, 'image');
+                        } else {
+                            uploadedVideos.push({
+                                file: file,
+                                dataURL: e.target.result
+                            });
+                            updatePreview('video-preview', uploadedVideos, 'video');
+                        }
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+        
+        // Handle file upload and preview
+        function handleFileUpload(event, previewId, type) {
+            const files = event.target.files;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                if ((type === 'image' && file.type.startsWith('image/')) || 
+                    (type === 'video' && file.type.startsWith('video/'))) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        if (type === 'image') {
+                            uploadedPhotos.push({
+                                file: file,
+                                dataURL: e.target.result
+                            });
+                            updatePreview('photo-preview', uploadedPhotos, 'image');
+                        } else {
+                            uploadedVideos.push({
+                                file: file,
+                                dataURL: e.target.result
+                            });
+                            updatePreview('video-preview', uploadedVideos, 'video');
+                        }
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+        
+        // Update preview container
+        function updatePreview(previewId, items, type) {
+            const previewContainer = document.getElementById(previewId);
+            previewContainer.innerHTML = '';
+            
+            items.forEach((item, index) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                
+                if (type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = item.dataURL;
+                    img.className = 'preview-image';
+                    previewItem.appendChild(img);
+                } else {
+                    const video = document.createElement('video');
+                    video.src = item.dataURL;
+                    video.className = 'preview-video';
+                    video.controls = true;
+                    previewItem.appendChild(video);
+                }
+                
+                // Add remove button
+                const removeBtn = document.createElement('div');
+                removeBtn.className = 'remove-item';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.addEventListener('click', function() {
+                    if (type === 'image') {
+                        uploadedPhotos.splice(index, 1);
+                        updatePreview('photo-preview', uploadedPhotos, 'image');
+                    } else {
+                        uploadedVideos.splice(index, 1);
+                        updatePreview('video-preview', uploadedVideos, 'video');
+                    }
+                });
+                
+                previewItem.appendChild(removeBtn);
+                previewContainer.appendChild(previewItem);
+            });
+        }
+        
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#fd79a8', '#f8a5c2', '#c56cf0', '#7d5fff', '#ffcccc'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                
+                // Random position
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                
+                // Random appearance
+                const size = Math.random() * 10 + 5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Animation
+                const duration = Math.random() * 3 + 2;
+                const delay = Math.random();
+                
+                // Apply styles
+                confetti.style.left = `${left}%`;
+                confetti.style.top = `${top}%`;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                confetti.style.backgroundColor = color;
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                confetti.style.animation = `float ${duration}s ease-in ${delay}s`;
+                confetti.style.opacity = '1';
+                
+                document.body.appendChild(confetti);
+                
+                // Remove confetti after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, (duration + delay) * 1000);
+            }
+        }
+        
+        // Create animated floating stickers
+        function createFloatingStickers() {
+            const stickers = ['💍', '💐', '🕊️', '🎀', '🥂', '💝', '💒', '🎊', '👰', '🤵'];
+            
+            for (let i = 0; i < 5; i++) {
+                const sticker = document.createElement('div');
+                sticker.classList.add('floating-stickers');
+                
+                // Random position
+                const left = Math.random() * 90 + 5;
+                const top = Math.random() * 90 + 5;
+                
+                // Random sticker
+                sticker.textContent = stickers[Math.floor(Math.random() * stickers.length)];
+                
+                // Animation delay
+                const delay = Math.random() * 10;
+                sticker.style.left = `${left}%`;
+                sticker.style.top = `${top}%`;
+                sticker.style.animationDelay = `${delay}s`;
+                
+                document.body.appendChild(sticker);
+            }
+        }
+        
+        // Initialize floating stickers
+        createFloatingStickers();
+    </script>
+</body>
+</html>
